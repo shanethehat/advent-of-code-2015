@@ -10,7 +10,10 @@ object Main extends App {
   }
 
   case class Wire(p: String) extends Provider {
-    def signal(circuit:Map[String, Provider]): Int = circuit(p).signal(circuit)
+    def signal(circuit:Map[String, Provider]): Int = {
+      println(p)
+      circuit(p).signal(circuit)
+    }
   }
 
   case class Value(value: Int) extends Provider {
@@ -18,7 +21,16 @@ object Main extends App {
   }
 
   case class Gate(providers: Seq[String], operation: Seq[Int] => Int) extends Provider {
-    def signal(circuit:Map[String, Provider]): Int = operation(providers.map(circuit(_).signal(circuit)))
+    var cache: Option[Int] = None
+    def signal(circuit:Map[String, Provider]): Int = cache match {
+      case Some(value) => value
+      case _ => {
+        val value = operation(providers.map(circuit(_).signal(circuit)))
+        cache = Some(value)
+        value
+      }
+    }
+    def cacheCleared(): Unit = cache = None
   }
 
   val notRegex = """NOT ([a-z]{1,3}) -> ([a-z]{1,3})""".r
@@ -84,17 +96,17 @@ object Main extends App {
     circuit ++ Map(out -> Wire(in))
   }
 
-  val lines = Source.fromFile("data/day7.txt").getLines().toList
-  val circuit = lines.foldLeft(Map[String, Provider]())((c, l) => updateCircuitFromLine(l, c))
-  println(circuit("a").signal(circuit))
-//  println(circuit)
-//  println(circuit("d").signal(circuit))
-//  println(circuit("e").signal(circuit))
-//  println(circuit("f").signal(circuit))
-//  println(circuit("g").signal(circuit))
-//  println(circuit("h").signal(circuit))
-//  println(circuit("i").signal(circuit))
-//  println(circuit("x").signal(circuit))
-//  println(circuit("y").signal(circuit))
+  def createCircuit(lines: List[String]) = lines.foldLeft(Map[String, Provider]())((c, l) => updateCircuitFromLine(l, c))
 
+  val lines = Source.fromFile("data/day7.txt").getLines().toList
+  val circuit = createCircuit(lines)
+
+  val initialSignalOnA = circuit("a").signal(circuit)
+
+  println(s"First pass signal on A: $initialSignalOnA")
+
+  val modifiedCircuit = createCircuit(lines).updated("b", Value(initialSignalOnA))
+  val modifiedSignalOnA = modifiedCircuit("a").signal(modifiedCircuit)
+
+  println(s"Second pass signal on A: $modifiedSignalOnA")
 }
