@@ -10,10 +10,7 @@ object Main extends App {
   }
 
   case class Wire(p: String) extends Provider {
-    def signal(circuit:Map[String, Provider]): Int = {
-      println(p)
-      circuit(p).signal(circuit)
-    }
+    def signal(circuit:Map[String, Provider]): Int = circuit(p).signal(circuit)
   }
 
   case class Value(value: Int) extends Provider {
@@ -30,7 +27,6 @@ object Main extends App {
         value
       }
     }
-    def cacheCleared(): Unit = cache = None
   }
 
   val notRegex = """NOT ([a-z]{1,3}) -> ([a-z]{1,3})""".r
